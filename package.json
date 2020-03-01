@@ -1,0 +1,22 @@
+{
+  "name": "buzz-culture-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zakkery/buzz-culture-server.git"
+  },
+  "author": "Iakov Gorelik",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Zakkery/buzz-culture-server/issues"
+  },
+  "homepage": "https://github.com/Zakkery/buzz-culture-server#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
