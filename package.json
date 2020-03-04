@@ -17,6 +17,12 @@
   },
   "homepage": "https://github.com/Zakkery/buzz-culture-server#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "@sendgrid/mail": "^6.5.3",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.17.1",
+    "handlebars": "^4.7.3",
+    "jsonwebtoken": "^8.5.1",
+    "md5": "^2.2.1",
+    "mongoose": "^5.9.3"
   }
 }
