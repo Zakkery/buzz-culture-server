@@ -1,7 +1,11 @@
 module.exports = {
   UserAlreadyExists: 'User with this email already exists',
-  NeedEmailAndName: 'Emain and Name should be provided',
+  NeedEmailAndName: 'Email and Name should be provided',
+  NeedEmail: 'Email should be provided',
+  ResetEmailSent: 'Email to reset your password has been sent',
   ExpiredOrFailedToken: 'Your token expired or doesn\'t exist',
   StudentWasEmailed: 'Student invitation has been sent',
-  RecordActivated: 'Your record has been activated. You can now login into the app'
+  RecordActivated: 'Your record has been activated. You can now login into the app',
+  NeedEmailAndPassword: 'Email and Password should be provided',
+  CannotAuthenticate: 'Email or Password is incorrect'
 };

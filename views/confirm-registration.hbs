@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Welcome to the CultureChat</title>
+    <link rel="stylesheet" type="text/css" href="css/registration.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <script src="js/registration.js" defer></script>
+  </head>
+  <body style="background-color: #47a1d9; color: #000;">
+    <div align="center">
+      <div id="box">
+        <h1>
+          Create a new CultureChat password!
+        </h1>
+        <form action="finish-reset-password" method="post">
+          <input type="hidden" id="token" name="token" value="{{tokenText}}">
+          <p>
+            <input type="password" name="password" value="" placeholder="Enter Password" id="password" class="password">
+            <button class="unmask" type="button"></button>
+          </p>
+          <p>
+            <input type="password" value="" placeholder="Confirm Password" id="password-confirm" class="password">
+            <button class="unmask" type="button"></button>
+            <div id="valid"></div>
+          </p>
+          <p class="submit-field">
+            <input type="submit" value="Submit" class="submit" id="submit-button">
+          </p>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
