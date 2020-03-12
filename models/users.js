@@ -49,7 +49,7 @@ UserModelSchema.static('createByInvite', function(email, name, role) {
         email: email,
         role: role
   });
-  return newStudentUser;
+  return newStudentUser.save();
 });
 
 
