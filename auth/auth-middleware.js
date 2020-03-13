@@ -4,7 +4,7 @@ var md5 = require('md5');
 var tokenTypes = require('./token-types');
 var UserModel = require('../models/users');
 
-function authenticate(role) {
+function authenticate(roles) {
   return async function(req, res, next) {
     try {
       if (!req.headers.authorization) {
@@ -22,7 +22,7 @@ function authenticate(role) {
       // token exists and is login token
       // check user role
       let userRecord = await UserModel.findById(decoded.id);
-      if (userRecord.role !== role) {
+      if (!roles.includes(userRecord.role)) {
         return res.status(401).json({message: 'Unauthorized'});
       }
       next();

@@ -7,7 +7,9 @@ const role = require('./auth/role');
 const errorMessages = require('./error-messages');
 const emailSender = require('./emails/email-sender');
 const tokenTypes = require('./auth/token-types');
-const authAdmin = require('./auth/auth-middleware')(role.Admin);
+
+const adminRoutes = require('./routes/admin-routes');
+const autorizedRoutes = require('./routes/authorized-routes');
 
 const port = process.env.PORT || 3000;
 
@@ -22,6 +24,7 @@ const app = express();
 app.set('view engine', 'hbs');
 
 app.set('views', path.join(__dirname, 'views'));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 var mongoDB = process.env.MONGODB_URI;
@@ -154,7 +157,6 @@ app.post('/login', async function(req, res) {
       //body is empty or doesn't have email or password
       return res.status(400).send(errorMessages.NeedEmailAndPassword);
   }
-
   let email = req.body.email;
   let password = req.body.password;
 
@@ -184,59 +186,15 @@ app.post('/login', async function(req, res) {
     // Send token as a response
     res.status(200).send({'auth': tokenText});
   } catch (err) {
-    return res.status(400).send(err);
-  }
-});
-
-// From here on everything else requires autorization and role management
-app.post('/invite', authAdmin, async function(req, res) {
-  if (Object.keys(req.body).length === 0 ||
-    !req.body.hasOwnProperty("email") ||
-    !req.body.hasOwnProperty("name") ||
-    req.body.email === "" ||
-    req.body.name === ""
-  ) {
-      //body is empty or doesn't have email
-      return res.status(400).send(errorMessages.NeedEmailAndName);
-  }
-
-  let inviteeEmail = req.body.email;
-  let inviteeName = req.body.name;
-
-  try {
-    //Check if user already exists
-    let userRecord = await UserModel.findOne({'email': inviteeEmail});
-    //user exists
-    if (userRecord !== null) {
-      return res.status(400).send(errorMessages.UserAlreadyExists);
-    }
-    // create new student record
-    let newStudentUser = await UserModel.createByInvite(inviteeEmail, inviteeName, role.Student);
-    // create a token for registration
-    let tokenData = {
-      id: newStudentUser._id,
-      type: tokenTypes.Registration
-    };
-
-    let expiresIn = 2 * 24 * 60 * 60; //48 hours
-    let tokenText = await TokenModel.signToken(tokenData, expiresIn);
-    let newToken = await TokenModel.createToken(tokenText, expiresIn);
-
-    // send email
-    let templateData = {
-      "name": inviteeName,
-      "registrationLink": req.protocol+"://"+req.headers.host + "/confirm-registration?token=" + tokenText
-    };
-
-    await emailSender.sendEmail('registration', inviteeEmail, templateData);
-    return res.status(200).send(errorMessages.StudentWasEmailed);
-  } catch (err) {
     console.log(err);
     return res.status(400).send(err);
   }
 });
 
+// From here on everything else requires autorization and role management
+app.use('/admin', adminRoutes);
 
+app.use('/', autorizedRoutes);
 
 app.get('*', function(req, res) {
   res.render('something-failed');
