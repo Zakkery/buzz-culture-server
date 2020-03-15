@@ -10,6 +10,7 @@ const tokenTypes = require('./auth/token-types');
 
 const adminRoutes = require('./routes/admin-routes');
 const autorizedRoutes = require('./routes/authorized-routes');
+const cron = require('node-cron');
 
 const port = process.env.PORT || 3000;
 
@@ -184,7 +185,7 @@ app.post('/login', async function(req, res) {
     let tokenText = await TokenModel.signToken(tokenData, expiresIn);
     let newToken = await TokenModel.createToken(tokenText, expiresIn);
     // Send token as a response
-    res.status(200).send({'auth': tokenText});
+    res.status(200).send({'auth': {'token': tokenText, 'role': userRecord.role}});
   } catch (err) {
     console.log(err);
     return res.status(400).send(err);
@@ -198,6 +199,11 @@ app.use('/', autorizedRoutes);
 
 app.get('*', function(req, res) {
   res.render('something-failed');
+});
+
+// Every 2 minutes check if there are some expired token out there
+cron.schedule('*/2 * * * *', async function() {
+  await TokenModel.deleteMany({expires_on: {$lt: Date.now()}});
 });
 
 app.listen(port, function() {
