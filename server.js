@@ -228,7 +228,7 @@ app.use(function (err, req, res, next) {
   } else {
     console.log(err.stack);
   }
-  return res.status(200).send({trueError});
+  return res.status(200).send(trueError);
 })
 
 // Every 2 minutes check if there are some expired token out there
