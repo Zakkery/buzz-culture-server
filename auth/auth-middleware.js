@@ -21,10 +21,14 @@ function authenticate(roles) {
       }
       // token exists and is login token
       // check user role
-      let userRecord = await UserModel.findById(decoded.id);
+      let userRecord = await UserModel
+        .findById(decoded.id)
+        .select("-password")
+        .populate("assigned_mentor", "name");
       if (!roles.includes(userRecord.role)) {
         return res.status(401).json({message: 'Unauthorized'});
       }
+      req.userRecord = userRecord;
       next();
     } catch (err) {
       return res.status(401).json({message: 'Unauthorized'});

@@ -9,6 +9,7 @@ const emailSender = require('./emails/email-sender');
 const tokenTypes = require('./auth/token-types');
 
 const adminRoutes = require('./routes/admin-routes');
+const studentRoutes = require('./routes/student-routes');
 const autorizedRoutes = require('./routes/authorized-routes');
 const cron = require('node-cron');
 
@@ -156,7 +157,7 @@ app.post('/login', async function(req, res) {
     req.body.password === ""
   ) {
       //body is empty or doesn't have email or password
-      return res.status(400).send(errorMessages.NeedEmailAndPassword);
+      return res.status(500).send(errorMessages.NeedEmailAndPassword);
   }
   let email = req.body.email;
   let password = req.body.password;
@@ -165,12 +166,12 @@ app.post('/login', async function(req, res) {
     //Check if user exists
     userRecord = await UserModel.findOne({'email': email});
     if (userRecord === null) {
-      return res.status(400).send(errorMessages.CannotAuthenticate);
+      return res.status(500).send(errorMessages.CannotAuthenticate);
     }
     // Check that passwords match
     let match = await bcrypt.compare(password, userRecord.password);
     if (!match) {
-      return res.status(400).send(errorMessages.CannotAuthenticate);
+      return res.status(500).send(errorMessages.CannotAuthenticate);
     }
 
     // Create a token
@@ -188,12 +189,13 @@ app.post('/login', async function(req, res) {
     res.status(200).send({'auth': {'token': tokenText, 'role': userRecord.role}});
   } catch (err) {
     console.log(err);
-    return res.status(400).send(err);
+    return res.status(500).send(err);
   }
 });
 
 // From here on everything else requires autorization and role management
 app.use('/admin', adminRoutes);
+app.use('/student', studentRoutes);
 
 app.use('/', autorizedRoutes);
 

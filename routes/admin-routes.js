@@ -2,6 +2,7 @@ const express = require('express');
 const emailSender = require('../emails/email-sender');
 const errorMessages = require('../error-messages');
 const role = require('../auth/role');
+const tokenTypes = require('../auth/token-types');
 const mongoose = require('mongoose');
 
 const authAdmin = require('../auth/auth-middleware')([role.Admin]);
@@ -22,7 +23,7 @@ router.get('/students/:type', async function(req, res) {
   let allowedRoles = [role.Student, role.Mentor];
 
   if (studentType === "" || !allowedRoles.includes(studentType)) {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
+    return res.status(200).send({'error': errorMessages.NecessaryInfoMissing});
   }
 
   try {
@@ -32,7 +33,7 @@ router.get('/students/:type', async function(req, res) {
     return res.status(200).send({data: studentRecords});
   } catch (err) {
     console.log(err);
-    return res.status(400).send(err);
+    return res.status(200).send({'error': err});
   }
 })
 
@@ -41,7 +42,7 @@ router.get('/student/:id', async function(req, res) {
   let studentId = req.params.id;
 
   if (studentId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
+    return res.status(200).send({'error': errorMessages.NecessaryInfoMissing});
   }
   try {
     let studentRecord = await UserModel
@@ -49,17 +50,17 @@ router.get('/student/:id', async function(req, res) {
       .select("-password")
       .populate({path: "assigned_mentor", select:"-password"});
     if (studentRecord === null) {
-      return res.status(400).send(errorMessages.RecordDoesntExist);
+      return res.status(200).send({'error': errorMessages.RecordDoesntExist});
     }
     return res.status(200).send({data: studentRecord});
   } catch (err) {
     console.log(err);
-    return res.status(400).send(err);
+    return res.status(200).send({'error': err});
   }
 });
 
 // update student information - only name and assigned mentor allowed
-router.post('/student/:id', async function(req, res) {
+router.put('/student/:id', async function(req, res) {
   let studentId = req.params.id;
 
   if (studentId === "") {
@@ -107,7 +108,7 @@ router.post('/student/:id', async function(req, res) {
 })
 
 // invite a new student
-router.put('/students', async function(req, res) {
+router.post('/students', async function(req, res) {
   let allowedRoles = [role.Student, role.Mentor];
   if (Object.keys(req.body).length === 0 ||
     !req.body.hasOwnProperty("email") ||
