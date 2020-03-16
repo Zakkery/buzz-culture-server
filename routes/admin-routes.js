@@ -18,71 +18,68 @@ var router = express.Router();
 router.use(authAdmin);
 
 // get students or mentors (depending on type)
-router.get('/students/:type', async function(req, res) {
-  let studentType = req.params.type;
-  let allowedRoles = [role.Student, role.Mentor];
-
-  if (studentType === "" || !allowedRoles.includes(studentType)) {
-    return res.status(200).send({'error': errorMessages.NecessaryInfoMissing});
-  }
-
+router.get('/students/:type', async function(req, res, next) {
   try {
+    let studentType = req.params.type;
+    let allowedRoles = [role.Student, role.Mentor];
+
+    if (studentType === "" || !allowedRoles.includes(studentType)) {
+      throw {message: errorMessages.NecessaryInfoMissing}
+    }
     let studentRecords = await UserModel
       .find({role: studentType})
       .select("-password");
-    return res.status(200).send({data: studentRecords});
+    return res.status(200).send({'success': true, 'data': studentRecords});
   } catch (err) {
-    console.log(err);
-    return res.status(200).send({'error': err});
+    next(err);
   }
 })
 
 // get student or mentors by id
-router.get('/student/:id', async function(req, res) {
-  let studentId = req.params.id;
-
-  if (studentId === "") {
-    return res.status(200).send({'error': errorMessages.NecessaryInfoMissing});
-  }
+router.get('/student/:id', async function(req, res, next) {
   try {
+    let studentId = req.params.id;
+
+    if (studentId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
     let studentRecord = await UserModel
       .findById(studentId)
       .select("-password")
       .populate({path: "assigned_mentor", select:"-password"});
     if (studentRecord === null) {
-      return res.status(200).send({'error': errorMessages.RecordDoesntExist});
+      throw {message: errorMessages.RecordDoesntExist};
     }
-    return res.status(200).send({data: studentRecord});
+    return res.status(200).send({'success': true, 'data': studentRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(200).send({'error': err});
+    next(err);
   }
 });
 
 // update student information - only name and assigned mentor allowed
-router.put('/student/:id', async function(req, res) {
-  let studentId = req.params.id;
-
-  if (studentId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
-  if (Object.keys(req.body).length === 0 || studentId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
-  if (
-    (!req.body.hasOwnProperty("name") || req.body.name === "") &&
-    (!req.body.hasOwnProperty("assigned_mentor") || req.body.assigned_mentor === "")) {
-        return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
+router.put('/student/:id', async function(req, res, next) {
   try {
+    let studentId = req.params.id;
+
+    if (studentId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
+    if (Object.keys(req.body).length === 0 || studentId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
+    if (
+      (!req.body.hasOwnProperty("name") || req.body.name === "") &&
+      (!req.body.hasOwnProperty("assigned_mentor") || req.body.assigned_mentor === "")) {
+          throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
     let studentRecord = await UserModel
       .findById(studentId)
       .select("-password");
     if (studentRecord === null) {
-      return res.status(400).send(errorMessages.RecordDoesntExist);
+      throw {message: errorMessages.RecordDoesntExist};
     }
 
     if (studentRecord.role == role.Student) {
@@ -100,39 +97,38 @@ router.put('/student/:id', async function(req, res) {
     }
 
     let updatedStudentRecord = studentRecord.save();
-    return res.status(200).send({data: studentRecord});
+    return res.status(200).send({'success': true, 'data': studentRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 })
 
 // invite a new student
-router.post('/students', async function(req, res) {
-  let allowedRoles = [role.Student, role.Mentor];
-  if (Object.keys(req.body).length === 0 ||
-    !req.body.hasOwnProperty("email") ||
-    !req.body.hasOwnProperty("name") ||
-    !req.body.hasOwnProperty("role") ||
-    req.body.email === "" ||
-    req.body.name === "" ||
-    req.body.role === "" ||
-    !allowedRoles.includes(req.body.role)
-  ) {
-      //body is empty or doesn't have email
-      return res.status(400).send(errorMessages.NeedEmailAndName);
-  }
-
-  let inviteeEmail = req.body.email;
-  let inviteeName = req.body.name;
-  let inviteeRole = req.body.role;
-
+router.post('/students', async function(req, res, next) {
   try {
+    let allowedRoles = [role.Student, role.Mentor];
+    if (Object.keys(req.body).length === 0 ||
+      !req.body.hasOwnProperty("email") ||
+      !req.body.hasOwnProperty("name") ||
+      !req.body.hasOwnProperty("role") ||
+      req.body.email === "" ||
+      req.body.name === "" ||
+      req.body.role === "" ||
+      !allowedRoles.includes(req.body.role)
+    ) {
+        //body is empty or doesn't have email
+        throw {message: errorMessages.NeedEmailAndName};
+    }
+
+    let inviteeEmail = req.body.email;
+    let inviteeName = req.body.name;
+    let inviteeRole = req.body.role;
+
     //Check if user already exists
     let userRecord = await UserModel.findOne({'email': inviteeEmail});
     //user exists
     if (userRecord !== null) {
-      return res.status(400).send(errorMessages.UserAlreadyExists);
+      throw {message: errorMessages.UserAlreadyExists};
     }
     // create new student record
     let newStudentUser = await UserModel.createByInvite(inviteeEmail, inviteeName, inviteeRole);
@@ -153,27 +149,25 @@ router.post('/students', async function(req, res) {
     };
 
     await emailSender.sendEmail('registration', inviteeEmail, templateData);
-    return res.status(200).send(errorMessages.StudentWasEmailed);
+    return res.status(200).send({'success': true, 'data': {'message': errorMessages.StudentWasEmailed}});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
 // delete a student
-router.delete('/student/:id', async function(req, res) {
-  let studentId = req.params.id;
-
-  if (studentId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
-  // find student
+router.delete('/student/:id', async function(req, res, next) {
   try {
+    let studentId = req.params.id;
+
+    if (studentId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
     // check that the record exists
     let studentRecord = await UserModel.findByIdAndDelete(studentId);
     if (studentRecord == null) {
-      return res.status(400).send(errorMessages.RecordDoesntExist);
+      throw {message: errorMessages.RecordDoesntExist};
     }
     // delete all student sessions
     let sessionRecords = await SessionModel.deleteMany(
@@ -183,27 +177,25 @@ router.delete('/student/:id', async function(req, res) {
           {'mentor': studentId}
       ]});
 
-    return res.status(200).send(errorMessages.RecordDeleted);
+    return res.status(200).send({'success': true, 'data': {'message': errorMessages.RecordDeleted}});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
-
 });
 
 // create a module
-router.post('/modules', async function(req, res) {
-  if (Object.keys(req.body).length === 0 ||
-    !req.body.hasOwnProperty("full_name") ||
-    !req.body.hasOwnProperty("short_name") ||
-    !req.body.hasOwnProperty("description") ||
-    req.body.full_name === "" ||
-    req.body.short_name === ""  ||
-    req.body.description === ""
-  ) {
-      return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
+router.post('/modules', async function(req, res, next) {
   try {
+    if (Object.keys(req.body).length === 0 ||
+      !req.body.hasOwnProperty("full_name") ||
+      !req.body.hasOwnProperty("short_name") ||
+      !req.body.hasOwnProperty("description") ||
+      req.body.full_name === "" ||
+      req.body.short_name === ""  ||
+      req.body.description === ""
+    ) {
+        throw {message: errorMessages.NecessaryInfoMissing};
+    }
     // check that there is no other module with the same short name
     let moduleRecord = await ModuleModel.findOne(
       {
@@ -212,7 +204,7 @@ router.post('/modules', async function(req, res) {
           {'full_name': req.body.full_name}
       ]});
     if (moduleRecord !== null) {
-      return res.status(400).send(errorMessages.ModuleAlreadyExists);
+      throw {message: errorMessages.ModuleAlreadyExists};
     }
     // create one
     let newModule = new ModuleModel({
@@ -221,38 +213,37 @@ router.post('/modules', async function(req, res) {
           description: req.body.description
     });
     let newModuleRecord = await newModule.save();
-    return res.status(200).send({'data':newModuleRecord});
+    return res.status(200).send({'success':true, 'data':newModuleRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
 // update a module
-router.put('/module/:id', async function(req, res) {
-  let moduleId = req.params.id;
-  let atLeastOne = ["full_name", "short_name", "description"];
-
-  if (Object.keys(req.body).length === 0 || moduleId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
-  let onePresent = false;
-  atLeastOne.forEach(function(prop) {
-    if (req.body.hasOwnProperty(prop) && req.body[prop] !== "") {
-      onePresent = true;
-    }
-  });
-
-  if (!onePresent) {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
+router.put('/module/:id', async function(req, res, next) {
   try {
+    let moduleId = req.params.id;
+    let atLeastOne = ["full_name", "short_name", "description"];
+
+    if (Object.keys(req.body).length === 0 || moduleId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
+    let onePresent = false;
+    atLeastOne.forEach(function(prop) {
+      if (req.body.hasOwnProperty(prop) && req.body[prop] !== "") {
+        onePresent = true;
+      }
+    });
+
+    if (!onePresent) {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
     // check that the record exists
     let moduleRecord = await ModuleModel.findById(moduleId);
     if (moduleRecord === null) {
-      return res.status(400).send(errorMessages.RecordDoesntExist);
+      throw {message: errorMessages.RecordDoesntExist};
     }
     atLeastOne.forEach(function(prop) {
       if (req.body.hasOwnProperty(prop) && req.body[prop] !== "") {
@@ -260,27 +251,26 @@ router.put('/module/:id', async function(req, res) {
       }
     });
     let updatedModuleRecord = await moduleRecord.save();
-    return res.status(200).send({'data':updatedModuleRecord});
+    return res.status(200).send({'success': true, 'data':updatedModuleRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
 // delete a module
-router.delete('/module/:id', async function(req, res) {
-  let moduleId = req.params.id;
-
-  if (moduleId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
+router.delete('/module/:id', async function(req, res, next) {
   try {
+    let moduleId = req.params.id;
+
+    if (moduleId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
     // check that the record exists
     let moduleRecord = await ModuleModel.findByIdAndDelete(moduleId);
 
     if (moduleRecord == null) {
-      return res.status(400).send(errorMessages.RecordDoesntExist);
+      throw {message: errorMessages.RecordDoesntExist};
     }
     // delete module from student records todo
     await UserModel.update({},
@@ -288,10 +278,9 @@ router.delete('/module/:id', async function(req, res) {
       {multi: true}
     );
 
-    return res.status(200).send(errorMessages.RecordDeleted);
+    return res.status(200).send({'success':true, 'data': {'message': errorMessages.RecordDeleted}});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err)
   }
 });
 

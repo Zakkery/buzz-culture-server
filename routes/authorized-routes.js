@@ -13,35 +13,33 @@ var router = express.Router();
 router.use(authAll);
 
 // get modules list
-router.get('/modules', async function(req, res) {
+router.get('/modules', async function(req, res, next) {
   try {
     //Get all existing modules
     let moduleRecords = await ModuleModel.find().select('-short_name -description');
-    return res.status(200).send({'data': moduleRecords});
+    return res.status(200).send({'success':true, 'data': moduleRecords});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
 // get module by id
 router.get('/module/:id', async function(req, res) {
-  let moduleId = req.params.id;
-
-  if (moduleId === "") {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
   try {
+    let moduleId = req.params.id;
+
+    if (moduleId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
     let moduleRecord = await ModuleModel
       .findById(moduleId);
     if (moduleRecord === null) {
-      return res.status(400).send(errorMessages.RecordDoesntExist);
+      throw {message: errorMessages.RecordDoesntExist};
     }
-    return res.status(200).send({data: moduleRecord});
+    return res.status(200).send({'success':true, 'data': moduleRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 

@@ -84,22 +84,26 @@ app.get('/confirm-registration', async function(req, res) {
   }
 });
 
-app.post('/reset-password', async function(req, res) {
-  if (Object.keys(req.body).length === 0 ||
-    !req.body.hasOwnProperty("email") ||
-    req.body.email === ""
-  ) {
-      //body is empty or doesn't have email
-      return res.status(400).send(errorMessages.NeedEmail);
-  }
-
-  let userEmail = req.body.email;
-
+app.post('/reset-password', async function(req, res, next) {
   try {
+
+    if (Object.keys(req.body).length === 0 ||
+      !req.body.hasOwnProperty("email") ||
+      req.body.email === ""
+    ) {
+        //body is empty or doesn't have email
+        throw {message: errorMessages.NeedEmail};
+    }
+
+    let userEmail = req.body.email;
+
     // check if user exists
     let userRecord = await UserModel.findOne({'email':userEmail});
     if (userRecord === null) {
-      return res.status(200).send(errorMessages.ResetEmailSent);
+      return res.status(200).send({
+        'success': true,
+        'data': {'message': errorMessages.ResetEmailSent}
+      });
     }
     // if exists - create a token and save it
     let tokenData = {
@@ -117,9 +121,12 @@ app.post('/reset-password', async function(req, res) {
 
     //Now we need to send an email
     await emailSender.sendEmail('reset-password', userRecord.email, templateData);
-    return res.status(200).send(errorMessages.ResetEmailSent);
+    return res.status(200).send({
+      'success': true,
+      'data': {'message': errorMessages.ResetEmailSent}
+    });
   } catch (err) {
-    return res.status(200).send(errorMessages.ResetEmailSent);
+    return next(err);
   }
 });
 
@@ -149,29 +156,29 @@ app.post('/finish-reset-password', async function(req, res) {
   }
 });
 
-app.post('/login', async function(req, res) {
-  if (Object.keys(req.body).length === 0 ||
-    !req.body.hasOwnProperty("email") ||
-    !req.body.hasOwnProperty("password") ||
-    req.body.email === "" ||
-    req.body.password === ""
-  ) {
-      //body is empty or doesn't have email or password
-      return res.status(500).send(errorMessages.NeedEmailAndPassword);
-  }
-  let email = req.body.email;
-  let password = req.body.password;
-
+app.post('/login', async function(req, res, next) {
   try {
+    if (Object.keys(req.body).length === 0 ||
+      !req.body.hasOwnProperty("email") ||
+      !req.body.hasOwnProperty("password") ||
+      req.body.email === "" ||
+      req.body.password === ""
+    ) {
+        //body is empty or doesn't have email or password
+        throw {message: errorMessages.NeedEmailAndPassword};
+    }
+    let email = req.body.email;
+    let password = req.body.password;
+
     //Check if user exists
     userRecord = await UserModel.findOne({'email': email});
     if (userRecord === null) {
-      return res.status(500).send(errorMessages.CannotAuthenticate);
+      throw {message: errorMessages.CannotAuthenticate};
     }
     // Check that passwords match
     let match = await bcrypt.compare(password, userRecord.password);
     if (!match) {
-      return res.status(500).send(errorMessages.CannotAuthenticate);
+      throw {message: errorMessages.CannotAuthenticate};
     }
 
     // Create a token
@@ -186,10 +193,15 @@ app.post('/login', async function(req, res) {
     let tokenText = await TokenModel.signToken(tokenData, expiresIn);
     let newToken = await TokenModel.createToken(tokenText, expiresIn);
     // Send token as a response
-    res.status(200).send({'auth': {'token': tokenText, 'role': userRecord.role}});
+    res.status(200).send(
+      {'success': true,
+      'data': {
+        'token': tokenText,
+        'role': userRecord.role
+      }
+    });
   } catch (err) {
-    console.log(err);
-    return res.status(500).send(err);
+    next(err);
   }
 });
 
@@ -202,6 +214,22 @@ app.use('/', autorizedRoutes);
 app.get('*', function(req, res) {
   res.render('something-failed');
 });
+
+app.use(function (err, req, res, next) {
+  let trueError = {
+    'message': err,
+    'success': false
+  };
+  if (err.hasOwnProperty("message")) {
+    trueError = {
+      'message': err["message"],
+      'success': false
+    };
+  } else {
+    console.log(err.stack);
+  }
+  return res.status(200).send({trueError});
+})
 
 // Every 2 minutes check if there are some expired token out there
 cron.schedule('*/2 * * * *', async function() {

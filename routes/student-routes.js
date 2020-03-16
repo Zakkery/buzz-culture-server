@@ -13,41 +13,39 @@ var router = express.Router();
 router.use(authStudent);
 
 // get students mentor
-router.get('/mentor', async function(req, res) {
-  if (req.userRecord.role !== role.Student) {
-    return res.status(200).send({data: ""});
-  }
+router.get('/mentor', async function(req, res, next) {
   try {
-    return res.status(200).send({data: await req.userRecord.assigned_mentor});
+    if (req.userRecord.role !== role.Student) {
+      return res.status(200).send({'success': true, 'data': null});
+    }
+    return res.status(200).send({'success': true, 'data': await req.userRecord.assigned_mentor});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
 // get student information
-router.get('/account', async function(req, res) {
+router.get('/account', async function(req, res, next) {
   try {
     let studentRecord = req.userRecord;
-    return res.status(200).send({data: studentRecord});
+    return res.status(200).send({'uccess': true, 'data': studentRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
 // update student information - only name allowed
-router.put('/account', async function(req, res) {
-  if (Object.keys(req.body).length === 0) {
-    return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
-  if (
-    (!req.body.hasOwnProperty("name") || req.body.name === "")) {
-        return res.status(400).send(errorMessages.NecessaryInfoMissing);
-  }
-
+router.put('/account', async function(req, res, next) {
   try {
+    if (Object.keys(req.body).length === 0) {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
+    if (
+      (!req.body.hasOwnProperty("name") || req.body.name === "")) {
+          throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
     let studentRecord = req.userRecord;
 
     if (req.body.hasOwnProperty("name") && req.body.name !== "") {
@@ -55,12 +53,13 @@ router.put('/account', async function(req, res) {
     }
 
     let updatedStudentRecord = await studentRecord.save();
-    return res.status(200).send({data: updatedStudentRecord});
+    return res.status(200).send({'success':true, data: updatedStudentRecord});
   } catch (err) {
-    console.log(err);
-    return res.status(400).send(err);
+    next(err);
   }
 });
 
+// get all sessions
+router.get('/sessions', async function(req, res, next) {});
 
 module.exports = router;
