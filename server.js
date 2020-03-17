@@ -197,7 +197,8 @@ app.post('/login', async function(req, res, next) {
       {'success': true,
       'data': {
         'token': tokenText,
-        'role': userRecord.role
+        'role': userRecord.role,
+        'name': userRecord.name
       }
     });
   } catch (err) {
