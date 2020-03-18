@@ -43,11 +43,12 @@ var UserModelSchema = new Schema({
 });
 
 // Default user invitation create method
-UserModelSchema.static('createByInvite', function(email, name, role) {
+UserModelSchema.static('createByInvite', function(email, name, role, mentor_id) {
   var newStudentUser = new this({
         name: name,
         email: email,
-        role: role
+        role: role,
+        assigned_mentor: mentor_id
   });
   return newStudentUser.save();
 });

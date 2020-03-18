@@ -85,8 +85,9 @@ router.put('/student/:id', async function(req, res, next) {
     if (studentRecord.role == role.Student) {
       if (req.body.hasOwnProperty("assigned_mentor") && req.body.assigned_mentor !== "") {
         // check mentor exists
-        let mentorRecord = await UserModel.findById(req.body.assigned_mentor);
-        if (mentorRecord !== null) {
+        if (req.body.assigned_mentor === "no_mentor") {
+          studentRecord.assigned_mentor = undefined;
+        } else {
           studentRecord.assigned_mentor = req.body.assigned_mentor;
         }
       }
@@ -111,9 +112,11 @@ router.post('/students', async function(req, res, next) {
       !req.body.hasOwnProperty("email") ||
       !req.body.hasOwnProperty("name") ||
       !req.body.hasOwnProperty("role") ||
+      !req.body.hasOwnProperty("assigned_mentor") ||
       req.body.email === "" ||
       req.body.name === "" ||
       req.body.role === "" ||
+      req.body.assigned_mentor === "" ||
       !allowedRoles.includes(req.body.role)
     ) {
         //body is empty or doesn't have email
@@ -123,6 +126,7 @@ router.post('/students', async function(req, res, next) {
     let inviteeEmail = req.body.email;
     let inviteeName = req.body.name;
     let inviteeRole = req.body.role;
+    let inviteeMentor = req.body.assigned_mentor;
 
     //Check if user already exists
     let userRecord = await UserModel.findOne({'email': inviteeEmail});
@@ -130,8 +134,14 @@ router.post('/students', async function(req, res, next) {
     if (userRecord !== null) {
       throw {message: errorMessages.UserAlreadyExists};
     }
+
+    if (inviteeMentor === "no_mentor") {
+      inviteeMentor = undefined;
+    }
+
     // create new student record
-    let newStudentUser = await UserModel.createByInvite(inviteeEmail, inviteeName, inviteeRole);
+    let newStudentUser = await UserModel.createByInvite(inviteeEmail, inviteeName, inviteeRole, inviteeMentor);
+
     // create a token for registration
     let tokenData = {
       id: newStudentUser._id,
