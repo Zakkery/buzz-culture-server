@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 
 const authStudent = require('../auth/auth-middleware')([role.Student, role.Mentor]);
 
+const ModuleModel = require('../models/modules');
+
 var router = express.Router();
 
 // for all paths on this route require admin authenication
@@ -61,5 +63,48 @@ router.put('/account', async function(req, res, next) {
 
 // get all sessions
 router.get('/sessions', async function(req, res, next) {});
+
+// mark module as read
+router.put('/module/read/:id', async function(req, res, next) {
+  try {
+    let moduleId = req.params.id;
+
+    if (moduleId === "") {
+      throw {message: errorMessages.NecessaryInfoMissing};
+    }
+
+    let moduleRecord = await ModuleModel
+      .findById(moduleId);
+    if (moduleRecord === null) {
+      throw {message: errorMessages.RecordDoesntExist};
+    }
+    // add module to the list of read modules if not there already
+    let toAdd = true;
+    for (let i = 0; i < req.userRecord.watched_modules.length; i++) {
+      if (req.userRecord.watched_modules[i].toString() == moduleRecord._id.toString()) {
+        toAdd = false;
+        break;
+      }
+    }
+
+    if (toAdd) {
+      req.userRecord.watched_modules.push(moduleRecord._id);
+      req.userRecord.save();
+    }
+
+    return res.status(200).send({'success':true, 'data': {'message': errorMessages.ModuleViewed}});
+  } catch (err) {
+    next(err);
+  }
+});
+
+// get read modules
+router.get('/modules', async function(req, res, next) {
+  try {
+    return res.status(200).send({'success':true, 'data': req.userRecord.watched_modules});
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;

@@ -11,5 +11,6 @@ module.exports = {
   ModuleAlreadyExists: 'Module with such name already exists',
   RecordDoesntExist: 'This object doesn\'t exist',
   RecordDeleted: 'This object was deleted',
+  ModuleViewed: 'This object was viewed',
   CannotAuthenticate: 'Email or Password is incorrect'
 };
