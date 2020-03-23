@@ -12,5 +12,6 @@ module.exports = {
   RecordDoesntExist: 'This object doesn\'t exist',
   RecordDeleted: 'This object was deleted',
   ModuleViewed: 'This object was viewed',
-  CannotAuthenticate: 'Email or Password is incorrect'
+  CannotAuthenticate: 'Email or Password is incorrect',
+  TimeInPast: 'Schedule time should be in the future'
 };
