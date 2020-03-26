@@ -20,11 +20,11 @@ router.use(authStudent);
 router.get('/mentor', async function(req, res, next) {
   try {
     if (req.userRecord.role !== role.Student) {
-      return res.status(200).send({'success': true, 'data': null});
+      return res.status(200).send({'success': true, 'data': {}});
     }
     let assigned_mentor = await req.userRecord.assigned_mentor;
     if (assigned_mentor == null) {
-        return res.status(200).send({'success': true, 'data': null});
+        return res.status(200).send({'success': true, 'data': {}});
     }
     return res.status(200).send({'success': true, 'data': await req.userRecord.assigned_mentor});
   } catch (err) {
