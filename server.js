@@ -64,6 +64,11 @@ app.use(
 );
 app.use(bodyParser.json());
 
+
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.html');
+});
+
 app.get('/confirm-registration', async function(req, res) {
   let tokenText = req.query.token;
   // verify a token from the DB
@@ -237,6 +242,10 @@ cron.schedule('*/2 * * * *', async function() {
   await TokenModel.deleteMany({expires_on: {$lt: Date.now()}});
 });
 
-app.listen(port, function() {
+
+var server = require('http').Server(app);
+const socketChatServer = require('./routes/socket-chat')(server);
+
+server.listen(port, function() {
     console.log(`Server is listening on port ${port}!`)
 });
