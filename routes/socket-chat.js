@@ -30,7 +30,7 @@ function setUpSocketChat(server) {
         socket.join(sessionId);
         socket.emit('start_chat', {
           'success': true,
-          'data': sessionId
+          'data': sessionRecord
         });
         socket.sessionRoom = sessionId;
       } catch (err) {
