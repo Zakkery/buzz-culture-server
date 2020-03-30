@@ -203,7 +203,8 @@ app.post('/login', async function(req, res, next) {
       'data': {
         'token': tokenText,
         'role': userRecord.role,
-        'name': userRecord.name
+        'name': userRecord.name,
+        'id': userRecord._id
       }
     });
   } catch (err) {
