@@ -7,6 +7,7 @@ var UserModel = require('../models/users');
 function authenticate(roles) {
   return async function(socket, next) {
     try {
+      console.log(socket.request.headers);
       if (!socket.request.headers.authorization) {
         throw {message: 'Missing Authorization Header'};
       }
