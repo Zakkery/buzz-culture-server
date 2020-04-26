@@ -1,3 +1,6 @@
+/*
+Adapted from https://www.templatemonster.com/blog/html5-css3-registration-forms/
+*/
 //code for unmasking password
 $('.unmask').on('click', function(){
   if($(this).prev('input').attr('type') == 'password')
